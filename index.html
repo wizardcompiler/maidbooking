@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>One Day Maid - Professional Maid Booking Service</title>
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="theme-color" content="#2563eb">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <style>
+
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #2563eb;
+    --primary-light: #3b82f6;
+    --primary-dark: #1d4ed8;
+    --accent-color: #f8fafc;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+    background-color: white;
+    color: var(--text-primary);
+    line-height: 1.6;
+    overflow-x: hidden;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* Header Styles */
+.header {
+    background: white;
+    box-shadow: var(--shadow-md);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transition: all 0.3s ease;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+
+.logo-section {
+    display: flex;
+    flex-direction: column;
+}
+
+.logo-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 0.2rem;
+}
+
+.project-credits {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.nav-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Button Styles */
+.btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--primary-color);
+    border: 2px solid var(--primary-color);
+}
+
+.btn-outline:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-large {
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+}
+
+.btn-full {
+    width: 100%;
+}
+
+/* Main Content */
+.main-content {
+    margin-top: 100px;
+    min-height: calc(100vh - 100px);
+}
+
+.page {
+    display: none;
+    animation: fadeIn 0.5s ease;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(20px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Hero Section */
+.hero-section {
+    background: linear-gradient(135deg, var(--accent-color) 0%, #f1f5f9 100%);
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.hero-title {
+    font-size: 3rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+}
+
+.hero-subtitle {
+    font-size: 1.2rem;
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cta-buttons {
+    margin-top: 2rem;
+}
+
+/* Search Section */
+.search-section {
+    background: white;
+    padding: 3rem 0;
+}
+
+.search-bar {
+    max-width: 600px;
+    margin: 0 auto 3rem;
+    position: relative;
+}
+
+.search-input {
+    width: 100%;
+    padding: 1rem 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: 50px;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.search-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Maid Cards */
+.maids-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+    padding: 2rem 0;
+}
+
+.maid-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+}
+
+.maid-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.maid-avatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin: 1.5rem auto 1rem;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 2rem;
+    font-weight: 700;
+    overflow: hidden;
+}
+
+.maid-avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.maid-info {
+    padding: 0 1.5rem 1.5rem;
+    text-align: center;
+}
+
+.maid-name {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.maid-experience {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.maid-pricing {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+}
+
+.price-item {
+    text-align: center;
+}
+
+.price-label {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+}
+
+.price-value {
+    font-weight: 700;
+    color: var(--primary-color);
+}
+
+.contact-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.contact-btn {
+    padding: 0.5rem;
+    border: 2px solid var(--primary-color);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--primary-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.contact-btn:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+/* Auth Styles */
+.auth-section {
+    padding: 4rem 0;
+    background: var(--accent-color);
+    min-height: calc(100vh - 100px);
+    display: flex;
+    align-items: center;
+}
+
+.auth-container {
+    max-width: 400px;
+    margin: 0 auto;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+}
+
+.auth-title {
+    text-align: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 2rem;
+    color: var(--text-primary);
+}
+
+.auth-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    background: var(--accent-color);
+    border-radius: 8px;
+    padding: 0.25rem;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 0.75rem;
+    border: none;
+    background: transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.tab-btn.active {
+    background: white;
+    color: var(--primary-color);
+    box-shadow: var(--shadow-sm);
+}
+
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.auth-form input,
+.auth-form textarea {
+    padding: 0.75rem;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.auth-form input:focus,
+.auth-form textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.auth-form textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.auth-link {
+    text-align: center;
+    margin-top: 1rem;
+    color: var(--text-secondary);
+}
+
+.auth-link a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.auth-link a:hover {
+    text-decoration: underline;
+}
+
+/* Dashboard Styles */
+.dashboard-section {
+    padding: 2rem 0;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-header h2 {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.dashboard-nav {
+    display: flex;
+    gap: 0.5rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.dashboard-nav .tab-btn {
+    padding: 1rem 1.5rem;
+    border: none;
+    background: transparent;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+}
+
+.dashboard-nav .tab-btn.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+.dashboard-content {
+    display: none;
+    padding: 2rem 0;
+}
+
+.dashboard-content.active {
+    display: block;
+}
+
+.profile-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border-color);
+}
+
+.profile-card h3 {
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 2rem;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    position: relative;
+}
+
+.close {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    color: var(--text-secondary);
+    font-size: 2rem;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: var(--text-primary);
+}
+
+/* PWA Install Notification */
+.install-notification {
+    position: fixed;
+    bottom: 2rem;
+    left: 2rem;
+    right: 2rem;
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    display: none;
+    z-index: 1500;
+    animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+}
+
+.install-content h4 {
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+}
+
+.install-content p {
+    color: var(--text-secondary);
+    margin-bottom: 1rem;
+}
+
+.install-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .container {
+        padding: 0 15px;
+    }
+
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-subtitle {
+        font-size: 1rem;
+    }
+
+    .maids-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .auth-container {
+        margin: 1rem;
+        padding: 1.5rem;
+    }
+
+    .modal-content {
+        margin: 2% auto;
+        width: 95%;
+    }
+
+    .install-notification {
+        left: 1rem;
+        right: 1rem;
+    }
+
+    .dashboard-nav {
+        flex-direction: column;
+    }
+
+    .contact-buttons {
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 480px) {
+    .logo-title {
+        font-size: 1.5rem;
+    }
+
+    .project-credits {
+        font-size: 0.7rem;
+    }
+
+    .nav-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .hero-section {
+        padding: 2rem 0;
+    }
+
+    .hero-title {
+        font-size: 1.8rem;
+    }
+}
+
+/* Utility Classes */
+.text-center {
+    text-align: center;
+}
+
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
+.mt-4 { margin-top: 2rem; }
+
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+.p-1 { padding: 0.5rem; }
+.p-2 { padding: 1rem; }
+.p-3 { padding: 1.5rem; }
+.p-4 { padding: 2rem; }
+
+.d-none { display: none; }
+.d-block { display: block; }
+.d-flex { display: flex; }
+.d-grid { display: grid; }
+
+.flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.text-primary { color: var(--primary-color); }
+.text-secondary { color: var(--text-secondary); }
+.text-success { color: var(--success-color); }
+.text-error { color: var(--error-color); }
+
+.bg-primary { background-color: var(--primary-color); }
+.bg-accent { background-color: var(--accent-color); }
+.bg-white { background-color: white; }
+
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <h1 class="logo-title">One Day Maid</h1>
+                    <p class="project-credits">Project by: [Your Name 1], [Your Name 2], [Your Name 3]</p>
+                </div>
+                <nav class="nav-buttons">
+                    <button class="btn btn-outline" onclick="showLogin()">Login</button>
+                    <button class="btn btn-primary" onclick="showRegister()">Register</button>
+                    <button class="btn btn-outline" onclick="logout()" id="logoutBtn" style="display:none;">Logout</button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Home Page -->
+        <div id="homePage" class="page active">
+            <section class="hero-section">
+                <div class="container">
+                    <h1 class="hero-title">Professional Maid Services</h1>
+                    <p class="hero-subtitle">Connect with trusted, experienced maids in your area. Book instantly and get professional cleaning services delivered to your doorstep.</p>
+                    <div class="cta-buttons">
+                        <button class="btn btn-primary btn-large" onclick="showRegister()">Get Started</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="search-section">
+                <div class="container">
+                    <div class="search-bar">
+                        <input type="text" class="search-input" id="searchInput" placeholder="Search for maids by name, location, or experience..." oninput="searchMaids()">
+                    </div>
+                    <div id="maidsGrid" class="maids-grid">
+                        <!-- Maids will be populated here -->
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Login Page -->
+        <div id="loginPage" class="page">
+            <section class="auth-section">
+                <div class="container">
+                    <div class="auth-container">
+                        <h2 class="auth-title">Login to Your Account</h2>
+                        <div class="auth-tabs">
+                            <button class="tab-btn active" onclick="switchLoginTab('customer')">Customer Login</button>
+                            <button class="tab-btn" onclick="switchLoginTab('maid')">Maid Login</button>
+                        </div>
+                        <form class="auth-form" onsubmit="handleLogin(event)">
+                            <input type="email" id="loginEmail" placeholder="Email Address" required>
+                            <input type="password" id="loginPassword" placeholder="Password" required>
+                            <button type="submit" class="btn btn-primary btn-full">Login</button>
+                        </form>
+                        <p class="auth-link">Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Register Page -->
+        <div id="registerPage" class="page">
+            <section class="auth-section">
+                <div class="container">
+                    <div class="auth-container">
+                        <h2 class="auth-title">Create Your Account</h2>
+                        <div class="auth-tabs">
+                            <button class="tab-btn active" onclick="switchRegisterTab('customer')">Customer Register</button>
+                            <button class="tab-btn" onclick="switchRegisterTab('maid')">Maid Register</button>
+                        </div>
+                        <form class="auth-form" onsubmit="handleRegister(event)">
+                            <input type="text" id="registerName" placeholder="Full Name" required>
+                            <input type="email" id="registerEmail" placeholder="Email Address" required>
+                            <input type="tel" id="registerPhone" placeholder="Phone Number" required>
+                            <input type="password" id="registerPassword" placeholder="Password" required>
+                            
+                            <!-- Maid-specific fields -->
+                            <div id="maidFields" style="display: none;">
+                                <input type="text" id="registerAddress" placeholder="Complete Address">
+                                <input type="number" id="registerExperience" placeholder="Experience (in years)">
+                                <input type="number" id="registerDailyRate" placeholder="Daily Rate (₹)">
+                                <input type="number" id="registerMonthlyRate" placeholder="Monthly Rate (₹)">
+                                <textarea id="registerBio" placeholder="Brief description about your services"></textarea>
+                                <input type="file" id="registerPhoto" accept="image/*">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-full">Register</button>
+                        </form>
+                        <p class="auth-link">Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Customer Dashboard -->
+        <div id="customerDashboard" class="page">
+            <section class="dashboard-section">
+                <div class="container">
+                    <div class="dashboard-header">
+                        <h2>Customer Dashboard</h2>
+                        <div class="dashboard-nav">
+                            <button class="tab-btn active" onclick="switchDashboardTab('profile')">Profile</button>
+                            <button class="tab-btn" onclick="switchDashboardTab('bookings')">My Bookings</button>
+                            <button class="tab-btn" onclick="switchDashboardTab('browse')">Browse Maids</button>
+                        </div>
+                    </div>
+
+                    <div id="customerProfile" class="dashboard-content active">
+                        <div class="profile-card">
+                            <h3>Profile Information</h3>
+                            <div id="customerProfileData"></div>
+                        </div>
+                    </div>
+
+                    <div id="customerBookings" class="dashboard-content">
+                        <div class="bookings-container">
+                            <h3>Your Bookings</h3>
+                            <div id="bookingsList"></div>
+                        </div>
+                    </div>
+
+                    <div id="customerBrowse" class="dashboard-content">
+                        <div class="browse-container">
+                            <h3>Available Maids</h3>
+                            <div id="customerMaidsGrid" class="maids-grid"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Maid Dashboard -->
+        <div id="maidDashboard" class="page">
+            <section class="dashboard-section">
+                <div class="container">
+                    <div class="dashboard-header">
+                        <h2>Maid Dashboard</h2>
+                        <div class="dashboard-nav">
+                            <button class="tab-btn active" onclick="switchMaidTab('profile')">Profile</button>
+                            <button class="tab-btn" onclick="switchMaidTab('bookings')">Received Bookings</button>
+                        </div>
+                    </div>
+
+                    <div id="maidProfile" class="dashboard-content active">
+                        <div class="profile-card">
+                            <h3>Your Profile</h3>
+                            <div id="maidProfileData"></div>
+                        </div>
+                    </div>
+
+                    <div id="maidBookings" class="dashboard-content">
+                        <div class="bookings-container">
+                            <h3>Booking Requests</h3>
+                            <div id="maidBookingsList"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Maid Detail Modal -->
+    <div id="maidModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeMaidModal()">&times;</span>
+            <div id="maidModalContent"></div>
+        </div>
+    </div>
+
+    <!-- PWA Install Notification -->
+    <div id="installNotification" class="install-notification">
+        <div class="install-content">
+            <h4>Install One Day Maid</h4>
+            <p>Get the full app experience on your device</p>
+            <div class="install-buttons">
+                <button class="btn btn-primary" onclick="installPWA()">Install</button>
+                <button class="btn btn-outline" onclick="dismissInstall()">Maybe Later</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+
+        // Global Variables
+let currentUser = null;
+let currentUserType = null;
+let currentLoginType = 'customer';
+let currentRegisterType = 'customer';
+let deferredPrompt = null;
+let isInstalled = false;
+
+// Initialize App
+document.addEventListener('DOMContentLoaded', function() {
+    initializeApp();
+    registerServiceWorker();
+    setupPWAInstall();
+    loadMaidsData();
+    checkUserLogin();
+});
+
+// App Initialization
+function initializeApp() {
+    // Initialize localStorage if not exists
+    if (!localStorage.getItem('maids')) {
+        localStorage.setItem('maids', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('customers')) {
+        localStorage.setItem('customers', JSON.stringify([]));
+    }
+    if (!localStorage.getItem('bookings')) {
+        localStorage.setItem('bookings', JSON.stringify([]));
+    }
+    
+    // Add some demo data if empty
+    addDemoData();
+}
+
+// Add Demo Data
+function addDemoData() {
+    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+    if (maids.length === 0) {
+        const demoMaids = [
+            {
+                id: 'maid_1',
+                name: 'Priya Sharma',
+                email: 'priya@example.com',
+                phone: '9876543210',
+                address: 'Sector 15, Noida, UP',
+                experience: 5,
+                dailyRate: 500,
+                monthlyRate: 12000,
+                bio: 'Experienced in household cleaning, cooking, and childcare.',
+                photo: null,
+                whatsapp: '9876543210'
+            },
+            {
+                id: 'maid_2',
+                name: 'Sunita Devi',
+                email: 'sunita@example.com',
+                phone: '9123456789',
+                address: 'Lajpat Nagar, New Delhi',
+                experience: 8,
+                dailyRate: 600,
+                monthlyRate: 15000,
+                bio: 'Specialist in deep cleaning and organization.',
+                photo: null,
+                whatsapp: '9123456789'
+            },
+            {
+                id: 'maid_3',
+                name: 'Meera Kumari',
+                email: 'meera@example.com',
+                phone: '9988776655',
+                address: 'Koramangala, Bangalore',
+                experience: 3,
+                dailyRate: 450,
+                monthlyRate: 10000,
+                bio: 'Young and energetic, good with pets and plants.',
+                photo: null,
+                whatsapp: '9988776655'
+            }
+        ];
+        localStorage.setItem('maids', JSON.stringify(demoMaids));
+    }
+}
+
+// Service Worker Registration
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered successfully');
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed');
+            });
+    }
+}
+
+// PWA Installation Setup
+function setupPWAInstall() {
+    // Check if already installed
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        isInstalled = true;
+        return;
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install notification after 3 seconds if not installed
+        setTimeout(() => {
+            if (!isInstalled && !localStorage.getItem('installDismissed')) {
+                showInstallNotification();
+            }
+        }, 3000);
+    });
+
+    window.addEventListener('appinstalled', () => {
+        isInstalled = true;
+        hideInstallNotification();
+        deferredPrompt = null;
+    });
+}
+
+// Show Install Notification
+function showInstallNotification() {
+    document.getElementById('installNotification').style.display = 'block';
+}
+
+// Hide Install Notification
+function hideInstallNotification() {
+    document.getElementById('installNotification').style.display = 'none';
+}
+
+// Install PWA
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            if (result.outcome === 'accepted') {
+                console.log('User accepted PWA install');
+            }
+            deferredPrompt = null;
+            hideInstallNotification();
+        });
+    }
+}
+
+// Dismiss Install
+function dismissInstall() {
+    localStorage.setItem('installDismissed', 'true');
+    hideInstallNotification();
+}
+
+// Navigation Functions
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+}
+
+function showHome() {
+    showPage('homePage');
+    loadMaidsData();
+}
+
+function showLogin() {
+    showPage('loginPage');
+}
+
+function showRegister() {
+    showPage('registerPage');
+}
+
+function showCustomerDashboard() {
+    showPage('customerDashboard');
+    loadCustomerProfile();
+    loadCustomerBookings();
+    loadMaidsForCustomer();
+}
+
+function showMaidDashboard() {
+    showPage('maidDashboard');
+    loadMaidProfile();
+    loadMaidBookings();
+}
+
+// Auth Tab Switching
+function switchLoginTab(type) {
+    currentLoginType = type;
+    document.querySelectorAll('#loginPage .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+}
+
+function switchRegisterTab(type) {
+    currentRegisterType = type;
+    document.querySelectorAll('#registerPage .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    event.target.classList.add('active');
+    
+    const maidFields = document.getElementById('maidFields');
+    if (type === 'maid') {
+        maidFields.style.display = 'block';
+    } else {
+        maidFields.style.display = 'none';
+    }
+}
+
+// Dashboard Tab Switching
+function switchDashboardTab(tab) {
+    document.querySelectorAll('#customerDashboard .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('#customerDashboard .dashboard-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    event.target.classList.add('active');
+    
+    if (tab === 'profile') {
+        document.getElementById('customerProfile').classList.add('active');
+    } else if (tab === 'bookings') {
+        document.getElementById('customerBookings').classList.add('active');
+    } else if (tab === 'browse') {
+        document.getElementById('customerBrowse').classList.add('active');
+    }
+}
+
+function switchMaidTab(tab) {
+    document.querySelectorAll('#maidDashboard .tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('#maidDashboard .dashboard-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    event.target.classList.add('active');
+    
+    if (tab === 'profile') {
+        document.getElementById('maidProfile').classList.add('active');
+    } else if (tab === 'bookings') {
+        document.getElementById('maidBookings').classList.add('active');
+    }
+}
+
+// Authentication Functions
+function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    let users = [];
+    let userType = '';
+    
+    if (currentLoginType === 'customer') {
+        users = JSON.parse(localStorage.getItem('customers') || '[]');
+        userType = 'customer';
+    } else {
+        users = JSON.parse(localStorage.getItem('maids') || '[]');
+        userType = 'maid';
+    }
+    
+    const user = users.find(u => u.email === email && u.password === password);
+    
+    if (user) {
+        currentUser = user;
+        currentUserType = userType;
+        localStorage.setItem('currentUser', JSON.stringify({user, userType}));
+        
+        updateNavigation();
+        
+        if (userType === 'customer') {
+            showCustomerDashboard();
+        } else {
+            showMaidDashboard();
+        }
+        
+        showNotification('Login successful!', 'success');
+    } else {
+        showNotification('Invalid credentials!', 'error');
+    }
+}
+
+function handleRegister(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const phone = document.getElementById('registerPhone').value;
+    const password = document.getElementById('registerPassword').value;
+    
+    let users = [];
+    let storageKey = '';
+    
+    if (currentRegisterType === 'customer') {
+        users = JSON.parse(localStorage.getItem('customers') || '[]');
+        storageKey = 'customers';
+    } else {
+        users = JSON.parse(localStorage.getItem('maids') || '[]');
+        storageKey = 'maids';
+    }
+    
+    // Check if user already exists
+    if (users.find(u => u.email === email)) {
+        showNotification('User already exists with this email!', 'error');
+        return;
+    }
+    
+    const newUser = {
+        id: generateId(currentRegisterType),
+        name,
+        email,
+        phone,
+        password
+    };
+    
+    // Add maid-specific fields
+    if (currentRegisterType === 'maid') {
+        newUser.address = document.getElementById('registerAddress').value;
+        newUser.experience = parseInt(document.getElementById('registerExperience').value) || 0;
+        newUser.dailyRate = parseInt(document.getElementById('registerDailyRate').value) || 0;
+        newUser.monthlyRate = parseInt(document.getElementById('registerMonthlyRate').value) || 0;
+        newUser.bio = document.getElementById('registerBio').value;
+        newUser.whatsapp = phone;
+        
+        // Handle photo upload
+        const photoFile = document.getElementById('registerPhoto').files[0];
+        if (photoFile) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                newUser.photo = e.target.result;
+                saveUser();
+            };
+            reader.readAsDataURL(photoFile);
+        } else {
+            newUser.photo = null;
+            saveUser();
+        }
+    } else {
+        saveUser();
+    }
+    
+    function saveUser() {
+        users.push(newUser);
+        localStorage.setItem(storageKey, JSON.stringify(users));
+        
+        showNotification('Registration successful!', 'success');
+        
+        // Auto login
+        currentUser = newUser;
+        currentUserType = currentRegisterType;
+        localStorage.setItem('currentUser', JSON.stringify({user: newUser, userType: currentRegisterType}));
+        
+        updateNavigation();
+        
+        if (currentRegisterType === 'customer') {
+            showCustomerDashboard();
+        } else {
+            showMaidDashboard();
+        }
+        
+        // Reset form
+        event.target.reset();
+        if (currentRegisterType === 'maid') {
+            document.getElementById('maidFields').style.display = 'none';
+            switchRegisterTab('customer');
+        }
+    }
+}
+
+function logout() {
+    currentUser = null;
+    currentUserType = null;
+    localStorage.removeItem('currentUser');
+    updateNavigation();
+    showHome();
+    showNotification('Logged out successfully!', 'success');
+}
+
+function checkUserLogin() {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        currentUser = userData.user;
+        currentUserType = userData.userType;
+        updateNavigation();
+    }
+}
+
+function updateNavigation() {
+    const loginBtn = document.querySelector('[onclick="showLogin()"]');
+    const registerBtn = document.querySelector('[onclick="showRegister()"]');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (currentUser) {
+        loginBtn.style.display = 'none';
+        registerBtn.style.display = 'none';
+        logoutBtn.style.display = 'inline-block';
+        logoutBtn.textContent = `Logout (${currentUser.name})`;
+    } else {
+        loginBtn.style.display = 'inline-block';
+        registerBtn.style.display = 'inline-block';
+        logoutBtn.style.display = 'none';
+    }
+}
+
+// Utility Functions
+function generateId(type) {
+    return type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+}
+
+function generateAvatar(name) {
+    const firstLetter = name.charAt(0).toUpperCase();
+    return `<div class="maid-avatar">${firstLetter}</div>`;
+}
+
+function showNotification(message, type = 'info') {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 120px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        z-index: 2000;
+        animation: slideInRight 0.3s ease;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.remove();
+    }, 3000);
+}
+
+// Maid Data Functions
+function loadMaidsData() {
+    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+    displayMaids(maids, 'maidsGrid');
+}
+
+function loadMaidsForCustomer() {
+    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+    displayMaids(maids, 'customerMaidsGrid');
+}
+
+function displayMaids(maids, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    maids.forEach(maid => {
+        const maidCard = createMaidCard(maid);
+        container.appendChild(maidCard);
+    });
+}
+
+function createMaidCard(maid) {
+    const card = document.createElement('div');
+    card.className = 'maid-card';
+    card.onclick = () => openMaidModal(maid);
+    
+    const avatarContent = maid.photo ? 
+        `<img src="${maid.photo}" alt="${maid.name}">` : 
+        maid.name.charAt(0).toUpperCase();
+    
+    card.innerHTML = `
+        <div class="maid-avatar">${avatarContent}</div>
+        <div class="maid-info">
+            <h3 class="maid-name">${maid.name}</h3>
+            <p class="maid-experience">${maid.experience} years experience</p>
+            <div class="maid-pricing">
+                <div class="price-item">
+                    <div class="price-label">Daily</div>
+                    <div class="price-value">₹${maid.dailyRate}</div>
+                </div>
+                <div class="price-item">
+                    <div class="price-label">Monthly</div>
+                    <div class="price-value">₹${maid.monthlyRate}</div>
+                </div>
+            </div>
+            <div class="contact-buttons">
+                <a href="tel:${maid.phone}" class="contact-btn" title="Call">📞</a>
+                <a href="https://wa.me/91${maid.whatsapp}" class="contact-btn" title="WhatsApp">💬</a>
+                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address)}" class="contact-btn" title="Location">📍</a>
+            </div>
+        </div>
+    `;
+    
+    return card;
+}
+
+function searchMaids() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+    
+    const filteredMaids = maids.filter(maid => 
+        maid.name.toLowerCase().includes(searchTerm) ||
+        maid.address.toLowerCase().includes(searchTerm) ||
+        maid.bio.toLowerCase().includes(searchTerm)
+    );
+    
+    displayMaids(filteredMaids, 'maidsGrid');
+}
+
+// Modal Functions
+function openMaidModal(maid) {
+    const modal = document.getElementById('maidModal');
+    const modalContent = document.getElementById('maidModalContent');
+    
+    const avatarContent = maid.photo ? 
+        `<img src="${maid.photo}" alt="${maid.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+        maid.name.charAt(0).toUpperCase();
+    
+    modalContent.innerHTML = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div class="maid-avatar" style="margin: 0 auto 1rem;">${avatarContent}</div>
+            <h2>${maid.name}</h2>
+            <p style="color: var(--text-secondary);">${maid.experience} years of experience</p>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <h4>About</h4>
+            <p>${maid.bio}</p>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <h4>Location</h4>
+            <p>${maid.address}</p>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <h4>Pricing</h4>
+            <div style="display: flex; justify-content: space-around; background: var(--accent-color); padding: 1rem; border-radius: 8px;">
+                <div style="text-align: center;">
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${maid.dailyRate}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Per Day</div>
+                </div>
+                <div style="text-align: center;">
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${maid.monthlyRate}</div>
+                    <div style="font-size: 0.9rem; color: var(--text-secondary);">Per Month</div>
+                </div>
+            </div>
+        </div>
+        
+        <div style="margin-bottom: 2rem;">
+            <h4>Contact</h4>
+            <div style="display: flex; gap: 1rem; justify-content: center;">
+                <a href="tel:${maid.phone}" class="btn btn-outline">📞 Call</a>
+                <a href="https://wa.me/91${maid.whatsapp}" class="btn btn-outline">💬 WhatsApp</a>
+                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address)}" class="btn btn-outline">📍 Location</a>
+            </div>
+        </div>
+        
+        ${currentUser && currentUserType === 'customer' ? `
+            <div style="text-align: center;">
+                <button class="btn btn-primary btn-large" onclick="bookMaid('${maid.id}')">Book Now</button>
+            </div>
+        ` : ''}
+    `;
+    
+    modal.style.display = 'block';
+}
+
+function closeMaidModal() {
+    document.getElementById('maidModal').style.display = 'none';
+}
+
+// Booking Functions
+function bookMaid(maidId) {
+    if (!currentUser || currentUserType !== 'customer') {
+        showNotification('Please login as customer to book!', 'error');
+        return;
+    }
+    
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+    const maid = maids.find(m => m.id === maidId);
+    
+    const booking = {
+        id: generateId('booking'),
+        customerId: currentUser.id,
+        maidId: maidId,
+        maidName: maid.name,
+        customerName: currentUser.name,
+        date: new Date().toISOString().split('T')[0],
+        status: 'pending',
+        createdAt: new Date().toISOString()
+    };
+    
+    bookings.push(booking);
+    localStorage.setItem('bookings', JSON.stringify(bookings));
+    
+    closeMaidModal();
+    showNotification('Booking request sent successfully!', 'success');
+    
+    if (document.getElementById('customerDashboard').classList.contains('active')) {
+        loadCustomerBookings();
+    }
+}
+
+// Dashboard Functions
+function loadCustomerProfile() {
+    const profileContainer = document.getElementById('customerProfileData');
+    if (!currentUser || !profileContainer) return;
+    
+    profileContainer.innerHTML = `
+        <div style="display: grid; gap: 1rem;">
+            <div><strong>Name:</strong> ${currentUser.name}</div>
+            <div><strong>Email:</strong> ${currentUser.email}</div>
+            <div><strong>Phone:</strong> ${currentUser.phone}</div>
+            <div><strong>Member Since:</strong> ${new Date().toLocaleDateString()}</div>
+        </div>
+    `;
+}
+
+function loadMaidProfile() {
+    const profileContainer = document.getElementById('maidProfileData');
+    if (!currentUser || !profileContainer) return;
+    
+    const avatarContent = currentUser.photo ? 
+        `<img src="${currentUser.photo}" alt="${currentUser.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+        currentUser.name.charAt(0).toUpperCase();
+    
+    profileContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div class="maid-avatar" style="margin: 0 auto 1rem;">${avatarContent}</div>
+            <h3>${currentUser.name}</h3>
+        </div>
+        <div style="display: grid; gap: 1rem;">
+            <div><strong>Email:</strong> ${currentUser.email}</div>
+            <div><strong>Phone:</strong> ${currentUser.phone}</div>
+            <div><strong>Address:</strong> ${currentUser.address}</div>
+            <div><strong>Experience:</strong> ${currentUser.experience} years</div>
+            <div><strong>Daily Rate:</strong> ₹${currentUser.dailyRate}</div>
+            <div><strong>Monthly Rate:</strong> ₹${currentUser.monthlyRate}</div>
+            <div><strong>Bio:</strong> ${currentUser.bio}</div>
+        </div>
+    `;
+}
+
+function loadCustomerBookings() {
+    const bookingsContainer = document.getElementById('bookingsList');
+    if (!currentUser || !bookingsContainer) return;
+    
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const customerBookings = bookings.filter(b => b.customerId === currentUser.id);
+    
+    if (customerBookings.length === 0) {
+        bookingsContainer.innerHTML = '<p>No bookings found.</p>';
+        return;
+    }
+    
+    bookingsContainer.innerHTML = customerBookings.map(booking => `
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4>${booking.maidName}</h4>
+                <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
+                    ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
+                      booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
+                      'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
+            </div>
+            <div><strong>Booking Date:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
+            <div><strong>Service Date:</strong> ${booking.date}</div>
+        </div>
+    `).join('');
+}
+
+function loadMaidBookings() {
+    const bookingsContainer = document.getElementById('maidBookingsList');
+    if (!currentUser || !bookingsContainer) return;
+    
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const maidBookings = bookings.filter(b => b.maidId === currentUser.id);
+    
+    if (maidBookings.length === 0) {
+        bookingsContainer.innerHTML = '<p>No booking requests found.</p>';
+        return;
+    }
+    
+    bookingsContainer.innerHTML = maidBookings.map(booking => `
+        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h4>${booking.customerName}</h4>
+                <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
+                    ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
+                      booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
+                      'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
+            </div>
+            <div><strong>Booking Date:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
+            <div><strong>Service Date:</strong> ${booking.date}</div>
+            ${booking.status === 'pending' ? `
+                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="updateBookingStatus('${booking.id}', 'confirmed')">Accept</button>
+                    <button class="btn btn-outline" onclick="updateBookingStatus('${booking.id}', 'rejected')">Reject</button>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+}
+
+function updateBookingStatus(bookingId, status) {
+    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
+    const booking = bookings.find(b => b.id === bookingId);
+    
+    if (booking) {
+        booking.status = status;
+        localStorage.setItem('bookings', JSON.stringify(bookings));
+        showNotification(`Booking ${status} successfully!`, 'success');
+        loadMaidBookings();
+    }
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('maidModal');
+    if (event.target === modal) {
+        closeMaidModal();
+    }
+}
+
+    </script>
+</body>
+</html>
