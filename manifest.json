@@ -1,5 +1,5 @@
 {
-    "name": "One Day Maid - Online Maid Booking Service",
+    "name": "MaidBook - Online Maid Booking Service",
     "short_name": "One Day Maid",
     "description": "Connect with trusted, experienced maids in your area. Book instantly and get professional cleaning services delivered to your doorstep.",
     "start_url": "/",
@@ -12,49 +12,49 @@
     "categories": ["business", "lifestyle", "productivity"],
     "icons": [
         {
-            "src": "icon-72.png",
+            "src": "maid.jpg",
             "sizes": "72x72",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-96.png",
+            "src": "maid.jpg",
             "sizes": "96x96",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-128.png",
+            "src": "maid.jpg",
             "sizes": "128x128",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-144.png",
+            "src": "maid.jpg",
             "sizes": "144x144",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-152.png",
+            "src": "maid.jpg",
             "sizes": "152x152",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-192.png",
+            "src": "maid.jpg",
             "sizes": "192x192",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-384.png",
+            "src": "maid.jpg",
             "sizes": "384x384",
             "type": "image/png",
             "purpose": "maskable any"
         },
         {
-            "src": "icon-512.png",
+            "src": "maid.jpg",
             "sizes": "512x512",
             "type": "image/png",
             "purpose": "maskable any"
