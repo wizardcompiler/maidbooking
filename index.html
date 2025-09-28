@@ -657,6 +657,17 @@ body {
 .bg-accent { background-color: var(--accent-color); }
 .bg-white { background-color: white; }
 
+@media (max-width: 768px) {
+    .main-content {
+        margin-top: 140px; /* Increase from 100px to 140px */
+    }
+    
+    .header-content {
+        padding: 0.8rem 0; /* Reduce padding slightly */
+    }
+}
+
+
     </style>
 </head>
 <body>
@@ -666,7 +677,7 @@ body {
             <div class="header-content">
                 <div class="logo-section">
                     <h1 class="logo-title">One Day Maid</h1>
-                    <p class="project-credits">Project by: 1) Ammara Mulla, 2) Saniya Mulla</p>
+                    <p class="project-credits">Project by: [Your Name 1], [Your Name 2], [Your Name 3]</p>
                 </div>
                 <nav class="nav-buttons">
                     <button class="btn btn-outline" onclick="showLogin()">Login</button>
@@ -708,6 +719,9 @@ body {
             <section class="auth-section">
                 <div class="container">
                     <div class="auth-container">
+                        <!-- Add this inside auth-container divs -->
+<button class="btn btn-outline" onclick="goBack()" style="margin-bottom: 1rem;">← Back</button>
+
                         <h2 class="auth-title">Login to Your Account</h2>
                         <div class="auth-tabs">
                             <button class="tab-btn active" onclick="switchLoginTab('customer')">Customer Login</button>
@@ -845,7 +859,52 @@ body {
         </div>
     </div>
 
-    <script>
+<script>
+
+// Add after global variables
+let navigationHistory = ['homePage'];
+
+// Replace existing showPage function with:
+function showPage(pageId, addToHistory = true) {
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    document.getElementById(pageId).classList.add('active');
+    
+    if (addToHistory) {
+        if (navigationHistory[navigationHistory.length - 1] !== pageId) {
+            navigationHistory.push(pageId);
+        }
+        // Push state to browser history
+        history.pushState(
+            { page: pageId, history: [...navigationHistory] }, 
+            '', 
+            pageId === 'homePage' ? '/' : `#${pageId}`
+        );
+    }
+}
+
+
+
+
+// Add new back function:
+function goBack() {
+    if (navigationHistory.length > 1) {
+        navigationHistory.pop(); // Remove current page
+        const previousPage = navigationHistory[navigationHistory.length - 1];
+        showPage(previousPage, false);
+    }
+}
+
+// Replace all showLogin(), showRegister(), etc. calls with:
+function showLogin() { showPage('loginPage'); }
+function showRegister() { showPage('registerPage'); }
+function showHome() { 
+    navigationHistory = ['homePage'];
+    showPage('homePage', false); // Don't add to history to prevent going back from home
+    loadMaidsData(); 
+    history.replaceState({ page: 'homePage', history: ['homePage'] }, '', '/');
+}
 
 
         // Global Variables
@@ -1350,6 +1409,15 @@ function createMaidCard(maid) {
     
     return card;
 }
+// Add after initializeApp() call in DOMContentLoaded
+window.addEventListener('popstate', function(event) {
+    if (event.state && event.state.page) {
+        showPage(event.state.page, false);
+        navigationHistory = event.state.history || ['homePage'];
+    } else {
+        goBack();
+    }
+});
 
 function searchMaids() {
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
