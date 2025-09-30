@@ -732,7 +732,7 @@ body {
                             <input type="password" id="loginPassword" placeholder="Password" required>
                             <button type="submit" class="btn btn-primary btn-full">Login</button>
                         </form>
-                        <p class="auth-link">Don't have an account? <a href="#" onclick="showRegister()">Register here</a></p>
+                        <p class="auth-link">Don't have an account? <a href="#" onclick="event.preventDefault(); showRegister();">Register here</a></p>
                     </div>
                 </div>
             </section>
@@ -766,7 +766,7 @@ body {
                             
                             <button type="submit" class="btn btn-primary btn-full">Register</button>
                         </form>
-                        <p class="auth-link">Already have an account? <a href="#" onclick="showLogin()">Login here</a></p>
+                        <p class="auth-link">Already have an account? <a href="#" onclick="event.preventDefault(); showLogin();">Login here</a></p>
                     </div>
                 </div>
             </section>
@@ -793,11 +793,16 @@ body {
                     </div>
 
                     <div id="customerBookings" class="dashboard-content">
-                        <div class="bookings-container">
-                            <h3>Your Bookings</h3>
-                            <div id="bookingsList"></div>
-                        </div>
-                    </div>
+    <div class="bookings-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Your Bookings</h3>
+            <button class="btn btn-primary" onclick="refreshCustomerBookings()" title="Refresh bookings">
+                🔄 Refresh
+            </button>
+        </div>
+        <div id="bookingsList"></div>
+    </div>
+</div>
 
                     <div id="customerBrowse" class="dashboard-content">
                         <div class="browse-container">
@@ -829,11 +834,16 @@ body {
                     </div>
 
                     <div id="maidBookings" class="dashboard-content">
-                        <div class="bookings-container">
-                            <h3>Booking Requests</h3>
-                            <div id="maidBookingsList"></div>
-                        </div>
-                    </div>
+    <div class="bookings-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3>Booking Requests</h3>
+            <button class="btn btn-primary" onclick="refreshMaidBookings()" title="Refresh bookings">
+                🔄 Refresh
+            </button>
+        </div>
+        <div id="maidBookingsList"></div>
+    </div>
+</div>
                 </div>
             </section>
         </div>
@@ -859,226 +869,820 @@ body {
         </div>
     </div>
 
+<!-- Add Supabase Client -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 
-// Add after global variables
-let navigationHistory = ['homePage'];
 
-// Replace existing showPage function with:
-function showPage(pageId, addToHistory = true) {
-    document.querySelectorAll('.page').forEach(page => {
-        page.classList.remove('active');
-    });
-    document.getElementById(pageId).classList.add('active');
-    
-    if (addToHistory) {
-        if (navigationHistory[navigationHistory.length - 1] !== pageId) {
-            navigationHistory.push(pageId);
-        }
-        // Push state to browser history
-        history.pushState(
-            { page: pageId, history: [...navigationHistory] }, 
-            '', 
-            pageId === 'homePage' ? '/' : `#${pageId}`
-        );
-    }
-}
+// ============================================
+// Initialize on load
+// ============================================
+console.log('One Day Maid App initialized successfully!'); 
+// ============================================
+// Replace these with your actual Supabase credentials
+const SUPABASE_URL = 'https://jxcqbwjujdpndjawjner.supabase.co'; // e.g., 'https://xxxxx.supabase.co'
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp4Y3Fid2p1amRwbmRqYXdqbmVyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MjIzMzMsImV4cCI6MjA3NDI5ODMzM30.RWu-yGjt62ugKiyuLmuWsFt3bbiOtD6rmBMvFxomiws';
 
+       
+// Initialize Supabase client
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-
-
-// Add new back function:
-function goBack() {
-    if (navigationHistory.length > 1) {
-        navigationHistory.pop(); // Remove current page
-        const previousPage = navigationHistory[navigationHistory.length - 1];
-        showPage(previousPage, false);
-    }
-}
-
-// Replace all showLogin(), showRegister(), etc. calls with:
-function showLogin() { showPage('loginPage'); }
-function showRegister() { showPage('registerPage'); }
-function showHome() { 
-    navigationHistory = ['homePage'];
-    showPage('homePage', false); // Don't add to history to prevent going back from home
-    loadMaidsData(); 
-    history.replaceState({ page: 'homePage', history: ['homePage'] }, '', '/');
-}
-
-
-        // Global Variables
+// ============================================
+// GLOBAL VARIABLES
+// ============================================
 let currentUser = null;
 let currentUserType = null;
 let currentLoginType = 'customer';
 let currentRegisterType = 'customer';
 let deferredPrompt = null;
 let isInstalled = false;
+let navigationHistory = ['homePage'];
 
-// Initialize App
+// ============================================
+// APP INITIALIZATION
+// ============================================
 document.addEventListener('DOMContentLoaded', function() {
     initializeApp();
     registerServiceWorker();
     setupPWAInstall();
-    loadMaidsData();
+    setupBackNavigation();
     checkUserLogin();
+    loadMaidsData();
 });
 
-// App Initialization
-function initializeApp() {
-    // Initialize localStorage if not exists
-    if (!localStorage.getItem('maids')) {
-        localStorage.setItem('maids', JSON.stringify([]));
+async function initializeApp() {
+    // Check if user is already logged in
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUser = userData.user;
+            currentUserType = userData.userType;
+            
+            // Verify with backend
+            await verifyUserSession();
+            updateNavigation();
+            
+            // Redirect to appropriate dashboard
+           // Clear navigation history and redirect to appropriate dashboard
+navigationHistory = ['homePage'];
+if (currentUserType === 'customer') {
+    navigationHistory.push('customerDashboard');
+    showCustomerDashboard();
+} else if (currentUserType === 'maid') {
+    navigationHistory.push('maidDashboard');
+    showMaidDashboard();
+}
+        } catch (error) {
+            console.error('Session restoration error:', error);
+            logout();
+        }
     }
-    if (!localStorage.getItem('customers')) {
-        localStorage.setItem('customers', JSON.stringify([]));
-    }
-    if (!localStorage.getItem('bookings')) {
-        localStorage.setItem('bookings', JSON.stringify([]));
-    }
+}
+
+async function verifyUserSession() {
+    if (!currentUser || !currentUserType) return false;
     
-    // Add some demo data if empty
-    addDemoData();
-}
-
-// Add Demo Data
-function addDemoData() {
-    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
-    if (maids.length === 0) {
-        const demoMaids = [
-            {
-                id: 'maid_1',
-                name: 'Priya Sharma',
-                email: 'priya@example.com',
-                phone: '9876543210',
-                address: 'Sector 15, Noida, UP',
-                experience: 5,
-                dailyRate: 500,
-                monthlyRate: 12000,
-                bio: 'Experienced in household cleaning, cooking, and childcare.',
-                photo: null,
-                whatsapp: '9876543210'
-            },
-            {
-                id: 'maid_2',
-                name: 'Sunita Devi',
-                email: 'sunita@example.com',
-                phone: '9123456789',
-                address: 'Lajpat Nagar, New Delhi',
-                experience: 8,
-                dailyRate: 600,
-                monthlyRate: 15000,
-                bio: 'Specialist in deep cleaning and organization.',
-                photo: null,
-                whatsapp: '9123456789'
-            },
-            {
-                id: 'maid_3',
-                name: 'Meera Kumari',
-                email: 'meera@example.com',
-                phone: '9988776655',
-                address: 'Koramangala, Bangalore',
-                experience: 3,
-                dailyRate: 450,
-                monthlyRate: 10000,
-                bio: 'Young and energetic, good with pets and plants.',
-                photo: null,
-                whatsapp: '9988776655'
-            }
-        ];
-        localStorage.setItem('maids', JSON.stringify(demoMaids));
+    try {
+        const tableName = currentUserType === 'customer' ? 'customers' : 'maids';
+        const { data, error } = await supabase
+            .from(tableName)
+            .select('*')
+            .eq('id', currentUser.id)
+            .single();
+        
+        if (error || !data) {
+            throw new Error('Session expired');
+        }
+        
+        // Update current user with latest data
+        currentUser = data;
+        localStorage.setItem('currentUser', JSON.stringify({
+            user: currentUser,
+            userType: currentUserType
+        }));
+        
+        return true;
+    } catch (error) {
+        console.error('Session verification failed:', error);
+        return false;
     }
 }
 
-// Service Worker Registration
-function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('/service-worker.js')
-            .then(registration => {
-                console.log('Service Worker registered successfully');
-            })
-            .catch(error => {
-                console.log('Service Worker registration failed');
-            });
+// DASHBOARD FUNCTIONS
+// ============================================
+async function loadCustomerProfile() {
+    const profileContainer = document.getElementById('customerProfileData');
+    if (!currentUser || !profileContainer) return;
+    
+    profileContainer.innerHTML = `
+        <div style="display: grid; gap: 1rem;">
+            <div><strong>Name:</strong> <span id="profileName">${currentUser.name}</span></div>
+            <div><strong>Email:</strong> <span id="profileEmail">${currentUser.email}</span></div>
+            <div><strong>Phone:</strong> <span id="profilePhone">${currentUser.phone}</span></div>
+            <div><strong>Member Since:</strong> ${new Date(currentUser.created_at).toLocaleDateString()}</div>
+        </div>
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="showEditProfile()">Edit Profile</button>
+            <button class="btn btn-outline" style="background: #dc2626; color: white; border-color: #dc2626;" onclick="deleteAccount()">Delete Account</button>
+        </div>
+        
+        <!-- Edit Profile Form (Hidden by default) -->
+        <div id="editProfileForm" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--accent-color); border-radius: 8px;">
+            <h4 style="margin-bottom: 1rem;">Edit Profile</h4>
+            <form onsubmit="updateCustomerProfile(event)" style="display: grid; gap: 1rem;">
+                <input type="text" id="editName" value="${currentUser.name}" placeholder="Full Name" required style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="tel" id="editPhone" value="${currentUser.phone}" placeholder="Phone Number" required style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="password" id="editPassword" placeholder="New Password (leave empty to keep current)" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-outline" onclick="cancelEditProfile()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+}
+
+async function loadMaidProfile() {
+    const profileContainer = document.getElementById('maidProfileData');
+    if (!currentUser || !profileContainer) return;
+    
+    const avatarContent = currentUser.photo ? 
+        `<img src="${currentUser.photo}" alt="${currentUser.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
+        currentUser.name.charAt(0).toUpperCase();
+    
+    profileContainer.innerHTML = `
+        <div style="text-align: center; margin-bottom: 2rem;">
+            <div class="maid-avatar" style="margin: 0 auto 1rem;">${avatarContent}</div>
+            <h3>${currentUser.name}</h3>
+        </div>
+        <div style="display: grid; gap: 1rem;">
+            <div><strong>Email:</strong> ${currentUser.email}</div>
+            <div><strong>Phone:</strong> ${currentUser.phone}</div>
+            <div><strong>Address:</strong> ${currentUser.address}</div>
+            <div><strong>Experience:</strong> ${currentUser.experience} years</div>
+            <div><strong>Daily Rate:</strong> ₹${currentUser.daily_rate || currentUser.dailyRate || 0}</div>
+            <div><strong>Monthly Rate:</strong> ₹${currentUser.monthly_rate || currentUser.monthlyRate || 0}</div>
+            <div><strong>Bio:</strong> ${currentUser.bio}</div>
+            <div><strong>Member Since:</strong> ${new Date(currentUser.created_at).toLocaleDateString()}</div>
+        </div>
+        <div style="margin-top: 2rem; display: flex; gap: 1rem; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="showEditMaidProfile()">Edit Profile</button>
+            <button class="btn btn-outline" style="background: #dc2626; color: white; border-color: #dc2626;" onclick="deleteAccount()">Delete Account</button>
+        </div>
+        
+        <!-- Edit Profile Form (Hidden by default) -->
+        <div id="editMaidProfileForm" style="display: none; margin-top: 2rem; padding: 1.5rem; background: var(--accent-color); border-radius: 8px;">
+            <h4 style="margin-bottom: 1rem;">Edit Profile</h4>
+            <form onsubmit="updateMaidProfile(event)" style="display: grid; gap: 1rem;">
+                <input type="text" id="editMaidName" value="${currentUser.name}" placeholder="Full Name" required style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="tel" id="editMaidPhone" value="${currentUser.phone}" placeholder="Phone Number" required style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="text" id="editMaidAddress" value="${currentUser.address || ''}" placeholder="Address" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="number" id="editMaidExperience" value="${currentUser.experience}" placeholder="Experience (years)" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="number" id="editMaidDailyRate" value="${currentUser.daily_rate || currentUser.dailyRate || 0}" placeholder="Daily Rate (₹)" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <input type="number" id="editMaidMonthlyRate" value="${currentUser.monthly_rate || currentUser.monthlyRate || 0}" placeholder="Monthly Rate (₹)" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <textarea id="editMaidBio" placeholder="Bio" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; min-height: 100px;">${currentUser.bio || ''}</textarea>
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Update Photo</label>
+                    <input type="file" id="editMaidPhoto" accept="image/*" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px; width: 100%;">
+                </div>
+                <input type="password" id="editMaidPassword" placeholder="New Password (leave empty to keep current)" style="padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 6px;">
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <button type="button" class="btn btn-outline" onclick="cancelEditMaidProfile()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    `;
+}
+
+// Show/Hide Edit Profile Forms
+function showEditProfile() {
+    const form = document.getElementById('editProfileForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 }
 
-// PWA Installation Setup
-function setupPWAInstall() {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-        isInstalled = true;
+function cancelEditProfile() {
+    const form = document.getElementById('editProfileForm');
+    if (form) form.style.display = 'none';
+}
+
+function showEditMaidProfile() {
+    const form = document.getElementById('editMaidProfileForm');
+    if (form) {
+        form.style.display = 'block';
+        form.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+}
+
+function cancelEditMaidProfile() {
+    const form = document.getElementById('editMaidProfileForm');
+    if (form) form.style.display = 'none';
+}
+
+// Update Customer Profile
+async function updateCustomerProfile(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('editName').value.trim();
+    const phone = document.getElementById('editPhone').value.trim();
+    const password = document.getElementById('editPassword').value;
+    
+    if (!name || !phone) {
+        showNotification('Please fill all required fields!', 'error');
         return;
     }
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
+    
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+        showNotification('Please enter a valid 10-digit phone number!', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const updateData = {
+            name,
+            phone,
+            updated_at: new Date().toISOString()
+        };
         
-        // Show install notification after 3 seconds if not installed
-        setTimeout(() => {
-            if (!isInstalled && !localStorage.getItem('installDismissed')) {
-                showInstallNotification();
-            }
-        }, 3000);
-    });
-
-    window.addEventListener('appinstalled', () => {
-        isInstalled = true;
-        hideInstallNotification();
-        deferredPrompt = null;
-    });
-}
-
-// Show Install Notification
-function showInstallNotification() {
-    document.getElementById('installNotification').style.display = 'block';
-}
-
-// Hide Install Notification
-function hideInstallNotification() {
-    document.getElementById('installNotification').style.display = 'none';
-}
-
-// Install PWA
-function installPWA() {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then((result) => {
-            if (result.outcome === 'accepted') {
-                console.log('User accepted PWA install');
-            }
-            deferredPrompt = null;
-            hideInstallNotification();
-        });
+        // Only update password if provided
+        if (password && password.trim()) {
+            updateData.password = password;
+        }
+        
+        const { data, error } = await supabase
+            .from('customers')
+            .update(updateData)
+            .eq('id', currentUser.id)
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        // Update local state
+        currentUser = data;
+        localStorage.setItem('currentUser', JSON.stringify({
+            user: currentUser,
+            userType: currentUserType
+        }));
+        
+        showNotification('Profile updated successfully!', 'success');
+        cancelEditProfile();
+        loadCustomerProfile();
+        updateNavigation();
+        
+    } catch (error) {
+        console.error('Update error:', error);
+        showNotification('Failed to update profile. Please try again.', 'error');
+    } finally {
+        showLoading(false);
     }
 }
 
-// Dismiss Install
-function dismissInstall() {
-    localStorage.setItem('installDismissed', 'true');
-    hideInstallNotification();
+// Update Maid Profile
+async function updateMaidProfile(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('editMaidName').value.trim();
+    const phone = document.getElementById('editMaidPhone').value.trim();
+    const address = document.getElementById('editMaidAddress').value.trim();
+    const experience = parseInt(document.getElementById('editMaidExperience').value) || 0;
+    const dailyRate = parseInt(document.getElementById('editMaidDailyRate').value) || 0;
+    const monthlyRate = parseInt(document.getElementById('editMaidMonthlyRate').value) || 0;
+    const bio = document.getElementById('editMaidBio').value.trim();
+    const password = document.getElementById('editMaidPassword').value;
+    
+    if (!name || !phone) {
+        showNotification('Please fill all required fields!', 'error');
+        return;
+    }
+    
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+        showNotification('Please enter a valid 10-digit phone number!', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const updateData = {
+            name,
+            phone,
+            address,
+            experience,
+            daily_rate: dailyRate,
+            monthly_rate: monthlyRate,
+            bio,
+            whatsapp: phone,
+            updated_at: new Date().toISOString()
+        };
+        
+        // Handle photo update
+        const photoFile = document.getElementById('editMaidPhoto').files[0];
+        if (photoFile) {
+            const photoBase64 = await fileToBase64(photoFile);
+            updateData.photo = photoBase64;
+        }
+        
+        // Only update password if provided
+        if (password && password.trim()) {
+            updateData.password = password;
+        }
+        
+        const { data, error } = await supabase
+            .from('maids')
+            .update(updateData)
+            .eq('id', currentUser.id)
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        // Update local state
+        currentUser = data;
+        localStorage.setItem('currentUser', JSON.stringify({
+            user: currentUser,
+            userType: currentUserType
+        }));
+        
+        showNotification('Profile updated successfully!', 'success');
+        cancelEditMaidProfile();
+        loadMaidProfile();
+        updateNavigation();
+        
+    } catch (error) {
+        console.error('Update error:', error);
+        showNotification('Failed to update profile. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
 }
 
-// Navigation Functions
-function showPage(pageId) {
+// Delete Account
+async function deleteAccount() {
+    const confirmation = confirm(
+        '⚠️ WARNING: This action cannot be undone!\n\n' +
+        'Are you sure you want to permanently delete your account?\n' +
+        'All your data including bookings will be removed.'
+    );
+    
+    if (!confirmation) return;
+    
+    const doubleConfirmation = confirm(
+        'Final confirmation required!\n\n' +
+        'Type YES to confirm account deletion.\n' +
+        'Click OK to proceed with deletion.'
+    );
+    
+    if (!doubleConfirmation) return;
+    
+    showLoading(true);
+    
+    try {
+        const tableName = currentUserType === 'customer' ? 'customers' : 'maids';
+        
+        const { error } = await supabase
+            .from(tableName)
+            .delete()
+            .eq('id', currentUser.id);
+        
+        if (error) throw error;
+        
+        showNotification('Account deleted successfully', 'success');
+        
+        // Clear local data and logout
+        localStorage.removeItem('currentUser');
+        currentUser = null;
+        currentUserType = null;
+        
+        setTimeout(() => {
+            showHome();
+            updateNavigation();
+        }, 1500);
+        
+    } catch (error) {
+        console.error('Delete error:', error);
+        showNotification('Failed to delete account. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadCustomerBookings() {
+    const bookingsContainer = document.getElementById('bookingsList');
+    if (!currentUser || !bookingsContainer) return;
+    
+    showLoading(true);
+    
+    try {
+        const { data: bookings, error } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('customer_id', currentUser.id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!bookings || bookings.length === 0) {
+            bookingsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No bookings found. Browse maids to make your first booking!</p>';
+            showLoading(false);
+            return;
+        }
+        
+        bookingsContainer.innerHTML = bookings.map(booking => `
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h4 style="margin: 0;">${booking.maid_name}</h4>
+                    <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
+                        ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
+                          booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
+                          booking.status === 'completed' ? 'background: #dbeafe; color: #2563eb;' :
+                          'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
+                </div>
+                <div style="display: grid; gap: 0.5rem; color: var(--text-secondary);">
+                    <div><strong>Booking Date:</strong> ${new Date(booking.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    <div><strong>Service Date:</strong> ${new Date(booking.service_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                </div>
+                ${booking.status === 'pending' ? `
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-outline" style="background: #dc2626; color: white; border-color: #dc2626;" onclick="cancelBooking('${booking.id}')">Cancel Booking</button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        bookingsContainer.innerHTML = '<p style="text-align: center; color: #dc2626;">Failed to load bookings</p>';
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function loadMaidBookings() {
+    const bookingsContainer = document.getElementById('maidBookingsList');
+    if (!currentUser || !bookingsContainer) return;
+    
+    showLoading(true);
+    
+    try {
+        const { data: bookings, error } = await supabase
+            .from('bookings')
+            .select('*')
+            .eq('maid_id', currentUser.id)
+            .order('created_at', { ascending: false });
+        
+        if (error) throw error;
+        
+        if (!bookings || bookings.length === 0) {
+            bookingsContainer.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No booking requests yet.</p>';
+            showLoading(false);
+            return;
+        }
+        
+        bookingsContainer.innerHTML = bookings.map(booking => `
+            <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+                    <h4 style="margin: 0;">${booking.customer_name}</h4>
+                    <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
+                        ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
+                          booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
+                          booking.status === 'completed' ? 'background: #dbeafe; color: #2563eb;' :
+                          'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
+                </div>
+                <div style="display: grid; gap: 0.5rem; color: var(--text-secondary);">
+                    <div><strong>Booking Date:</strong> ${new Date(booking.created_at).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                    <div><strong>Service Date:</strong> ${new Date(booking.service_date).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                </div>
+                ${booking.status === 'pending' ? `
+                    <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="updateBookingStatus('${booking.id}', 'confirmed')">Accept</button>
+                        <button class="btn btn-outline" style="background: #dc2626; color: white; border-color: #dc2626;" onclick="updateBookingStatus('${booking.id}', 'rejected')">Reject</button>
+                    </div>
+                ` : booking.status === 'confirmed' ? `
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-primary" onclick="updateBookingStatus('${booking.id}', 'completed')">Mark as Completed</button>
+                    </div>
+                ` : ''}
+            </div>
+        `).join('');
+        
+    } catch (error) {
+        console.error('Error loading bookings:', error);
+        bookingsContainer.innerHTML = '<p style="text-align: center; color: #dc2626;">Failed to load bookings</p>';
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function updateBookingStatus(bookingId, status) {
+    showLoading(true);
+    
+    try {
+        const { error } = await supabase
+            .from('bookings')
+            .update({ 
+                status,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', bookingId);
+        
+        if (error) throw error;
+        
+        showNotification(`Booking ${status} successfully!`, 'success');
+        loadMaidBookings();
+        
+    } catch (error) {
+        console.error('Update status error:', error);
+        showNotification('Failed to update booking status', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function cancelBooking(bookingId) {
+    const confirmation = confirm('Are you sure you want to cancel this booking?');
+    if (!confirmation) return;
+    
+    showLoading(true);
+    
+    try {
+        const { error } = await supabase
+            .from('bookings')
+            .update({ 
+                status: 'rejected',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', bookingId);
+        
+        if (error) throw error;
+        
+        showNotification('Booking cancelled successfully!', 'success');
+        loadCustomerBookings();
+        
+    } catch (error) {
+        console.error('Cancel booking error:', error);
+        showNotification('Failed to cancel booking', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ============================================
+// UTILITY FUNCTIONS
+// ============================================
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
+
+function showNotification(message, type = 'info') {
+    // Remove existing notifications
+    const existingNotifications = document.querySelectorAll('.notification');
+    existingNotifications.forEach(n => n.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.textContent = message;
+    notification.style.cssText = `
+        position: fixed;
+        top: 100px;
+        right: 20px;
+        padding: 1rem 1.5rem;
+        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
+        color: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        z-index: 10000;
+        animation: slideInRight 0.3s ease;
+        max-width: 300px;
+        font-weight: 500;
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        notification.style.animation = 'slideOutRight 0.3s ease';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+function showLoading(show) {
+    let loader = document.getElementById('globalLoader');
+    
+    if (show) {
+        if (!loader) {
+            loader = document.createElement('div');
+            loader.id = 'globalLoader';
+            loader.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            loader.innerHTML = `
+                <div style="background: white; padding: 2rem; border-radius: 12px; text-align: center;">
+                    <div style="width: 50px; height: 50px; border: 4px solid #f3f4f6; border-top: 4px solid var(--primary-color); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1rem;"></div>
+                    <p style="color: var(--text-primary); font-weight: 600;">Loading...</p>
+                </div>
+            `;
+            document.body.appendChild(loader);
+        }
+    } else {
+        if (loader) {
+            loader.remove();
+        }
+    }
+}
+
+// Add CSS animation for notifications and loader
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideInRight {
+        from {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+    }
+    
+    @keyframes slideOutRight {
+        from {
+            transform: translateX(0);
+            opacity: 1;
+        }
+        to {
+            transform: translateX(100%);
+            opacity: 0;
+        }
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+`;
+document.head.appendChild(style);
+
+// ============================================
+// ERROR HANDLING
+// ============================================
+window.addEventListener('error', function(event) {
+    console.error('Global error:', event.error);
+    showNotification('An error occurred. Please try again.', 'error');
+});
+
+window.addEventListener('unhandledrejection', function(event) {
+    console.error('Unhandled promise rejection:', event.reason);
+    showNotification('An error occurred. Please try again.', 'error');
+});
+
+// ============================================
+// ONLINE/OFFLINE DETECTION
+// ============================================
+window.addEventListener('online', function() {
+    showNotification('Back online!', 'success');
+    // Refresh data when back online
+    if (currentUser) {
+        verifyUserSession();
+    }
+    loadMaidsData();
+});
+
+window.addEventListener('offline', function() {
+    showNotification('You are offline. Some features may not work.', 'error');
+});
+
+// ============================================
+// PREVENT ZOOM ON MOBILE
+// ============================================
+document.addEventListener('gesturestart', function(e) {
+    e.preventDefault();
+});
+
+
+// ============================================
+// NAVIGATION & BACK BUTTON HANDLING
+// ============================================
+function setupBackNavigation() {
+    // Handle browser back button
+    window.addEventListener('popstate', function(event) {
+        if (event.state && event.state.page) {
+            const pageId = event.state.page;
+            showPage(pageId, false);
+            navigationHistory = event.state.history || ['homePage'];
+        } else {
+            // If no state, go back in navigation history
+            goBack();
+        }
+    });
+    
+    // Handle Android back button (PWA)
+    document.addEventListener('backbutton', function(e) {
+        e.preventDefault();
+        goBack();
+    }, false);
+}
+
+// Refresh functions for bookings
+async function refreshMaidBookings() {
+    showNotification('Refreshing bookings...', 'info');
+    await loadMaidBookings();
+    showNotification('Bookings refreshed!', 'success');
+}
+
+async function refreshCustomerBookings() {
+    showNotification('Refreshing bookings...', 'info');
+    await loadCustomerBookings();
+    showNotification('Bookings refreshed!', 'success');
+}
+
+function showPage(pageId, addToHistory = true) {
     document.querySelectorAll('.page').forEach(page => {
         page.classList.remove('active');
     });
-    document.getElementById(pageId).classList.add('active');
+    
+    const page = document.getElementById(pageId);
+    if (page) {
+        page.classList.add('active');
+    }
+    
+    if (addToHistory) {
+        // Only add to history if it's different from current page
+        if (navigationHistory[navigationHistory.length - 1] !== pageId) {
+            navigationHistory.push(pageId);
+        }
+        
+        // Update browser history
+        const url = pageId === 'homePage' ? '/' : `#${pageId}`;
+        history.pushState(
+            { page: pageId, history: [...navigationHistory] }, 
+            '', 
+            url
+        );
+    }
+    
+    // Scroll to top
+    window.scrollTo(0, 0);
 }
 
-function showHome() {
-    showPage('homePage');
-    loadMaidsData();
+function goBack() {
+    if (navigationHistory.length > 1) {
+        navigationHistory.pop(); // Remove current page
+        const previousPage = navigationHistory[navigationHistory.length - 1];
+        
+        // Update browser history
+        const url = previousPage === 'homePage' ? '/' : `#${previousPage}`;
+        history.pushState(
+            { page: previousPage, history: [...navigationHistory] },
+            '',
+            url
+        );
+        
+        showPage(previousPage, false);
+    } else if (navigationHistory[0] === 'homePage') {
+        // If at home page, exit app or stay
+        if (typeof navigator.app !== 'undefined') {
+            navigator.app.exitApp();
+        }
+    }
 }
 
-function showLogin() {
-    showPage('loginPage');
+function showHome() { 
+    navigationHistory = ['homePage'];
+    showPage('homePage', false);
+    loadMaidsData(); 
+    history.replaceState({ page: 'homePage', history: ['homePage'] }, '', '/');
 }
 
-function showRegister() {
-    showPage('registerPage');
+function showLogin() { 
+    showPage('loginPage'); 
+}
+
+function showRegister() { 
+    showPage('registerPage'); 
 }
 
 function showCustomerDashboard() {
@@ -1094,7 +1698,315 @@ function showMaidDashboard() {
     loadMaidBookings();
 }
 
-// Auth Tab Switching
+// ============================================
+// SERVICE WORKER & PWA
+// ============================================
+function registerServiceWorker() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js')
+            .then(registration => {
+                console.log('Service Worker registered');
+            })
+            .catch(error => {
+                console.log('Service Worker registration failed:', error);
+            });
+    }
+}
+
+function setupPWAInstall() {
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+        isInstalled = true;
+        return;
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        setTimeout(() => {
+            if (!isInstalled && !localStorage.getItem('installDismissed')) {
+                showInstallNotification();
+            }
+        }, 3000);
+    });
+
+    window.addEventListener('appinstalled', () => {
+        isInstalled = true;
+        hideInstallNotification();
+        deferredPrompt = null;
+    });
+}
+
+function showInstallNotification() {
+    const notification = document.getElementById('installNotification');
+    if (notification) {
+        notification.style.display = 'block';
+    }
+}
+
+function hideInstallNotification() {
+    const notification = document.getElementById('installNotification');
+    if (notification) {
+        notification.style.display = 'none';
+    }
+}
+
+function installPWA() {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then((result) => {
+            deferredPrompt = null;
+            hideInstallNotification();
+        });
+    }
+}
+
+function dismissInstall() {
+    localStorage.setItem('installDismissed', 'true');
+    hideInstallNotification();
+}
+
+// ============================================
+// AUTHENTICATION
+// ============================================
+async function handleLogin(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    
+    if (!email || !password) {
+        showNotification('Please fill all fields!', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const tableName = currentLoginType === 'customer' ? 'customers' : 'maids';
+        
+        const { data, error } = await supabase
+            .from(tableName)
+            .select('*')
+            .eq('email', email)
+            .eq('password', password)
+            .single();
+        
+        if (error || !data) {
+            showNotification('Invalid credentials!', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        // Store user data
+        currentUser = data;
+        currentUserType = currentLoginType;
+        
+        // Save to localStorage for persistence
+        localStorage.setItem('currentUser', JSON.stringify({
+            user: currentUser,
+            userType: currentUserType
+        }));
+        
+        updateNavigation();
+        
+      // Clear any previous navigation history
+navigationHistory = ['homePage'];
+
+if (currentUserType === 'customer') {
+    showCustomerDashboard();
+} else {
+    showMaidDashboard();
+}
+        
+        showNotification('Login successful!', 'success');
+        
+        // Reset form
+        event.target.reset();
+        
+    } catch (error) {
+        console.error('Login error:', error);
+        showNotification('Login failed. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+async function handleRegister(event) {
+    event.preventDefault();
+    
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const phone = document.getElementById('registerPhone').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    
+    if (!name || !email || !phone || !password) {
+        showNotification('Please fill all required fields!', 'error');
+        return;
+    }
+    
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showNotification('Please enter a valid email!', 'error');
+        return;
+    }
+    
+    // Phone validation
+    const phoneRegex = /^[0-9]{10}$/;
+    if (!phoneRegex.test(phone)) {
+        showNotification('Please enter a valid 10-digit phone number!', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        const tableName = currentRegisterType === 'customer' ? 'customers' : 'maids';
+        
+        const newUser = {
+            name,
+            email,
+            phone,
+            password
+        };
+        
+        // Add maid-specific fields
+        if (currentRegisterType === 'maid') {
+            newUser.address = document.getElementById('registerAddress').value.trim();
+            newUser.experience = parseInt(document.getElementById('registerExperience').value) || 0;
+            newUser.daily_rate = parseInt(document.getElementById('registerDailyRate').value) || 0;
+            newUser.monthly_rate = parseInt(document.getElementById('registerMonthlyRate').value) || 0;
+            newUser.bio = document.getElementById('registerBio').value.trim();
+            newUser.whatsapp = phone;
+            
+            // Handle photo upload
+            const photoFile = document.getElementById('registerPhoto').files[0];
+            if (photoFile) {
+                const photoBase64 = await fileToBase64(photoFile);
+                newUser.photo = photoBase64;
+            }
+        }
+        
+        // Insert into Supabase
+        const { data, error } = await supabase
+            .from(tableName)
+            .insert([newUser])
+            .select()
+            .single();
+        
+        if (error) {
+            if (error.code === '23505') { // Unique constraint violation
+                showNotification('User already exists with this email!', 'error');
+            } else {
+                showNotification('Registration failed. Please try again.', 'error');
+            }
+            showLoading(false);
+            return;
+        }
+        
+        // Auto login
+        currentUser = data;
+        currentUserType = currentRegisterType;
+        
+        localStorage.setItem('currentUser', JSON.stringify({
+            user: currentUser,
+            userType: currentUserType
+        }));
+        
+        updateNavigation();
+        
+        if (currentRegisterType === 'customer') {
+            showCustomerDashboard();
+        } else {
+            showMaidDashboard();
+        }
+        
+        showNotification('Registration successful!', 'success');
+        
+        // Reset form
+        event.target.reset();
+        document.getElementById('maidFields').style.display = 'none';
+        
+    } catch (error) {
+        console.error('Registration error:', error);
+        showNotification('Registration failed. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+function logout() {
+    currentUser = null;
+    currentUserType = null;
+    localStorage.removeItem('currentUser');
+    
+    // Clear navigation history completely
+    navigationHistory = ['homePage'];
+    
+    // Hide all pages first
+    document.querySelectorAll('.page').forEach(page => {
+        page.classList.remove('active');
+    });
+    
+    // Show home page
+    document.getElementById('homePage').classList.add('active');
+    
+    // Update navigation buttons
+    updateNavigation();
+    
+    // Force clear browser history
+    history.replaceState({ page: 'homePage', history: ['homePage'] }, '', '/');
+    
+    // Reload maids data
+    loadMaidsData();
+    
+    showNotification('Logged out successfully!', 'success');
+}
+async function checkUserLogin() {
+    const savedUser = localStorage.getItem('currentUser');
+    if (savedUser) {
+        try {
+            const userData = JSON.parse(savedUser);
+            currentUser = userData.user;
+            currentUserType = userData.userType;
+            
+            // Verify session is still valid
+            const isValid = await verifyUserSession();
+            if (isValid) {
+                updateNavigation();
+            } else {
+                logout();
+            }
+        } catch (error) {
+            console.error('Login check error:', error);
+            logout();
+        }
+    }
+}
+
+function updateNavigation() {
+    const loginBtn = document.querySelector('[onclick="showLogin()"]');
+    const registerBtn = document.querySelector('[onclick="showRegister()"]');
+    const logoutBtn = document.getElementById('logoutBtn');
+    
+    if (currentUser) {
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (registerBtn) registerBtn.style.display = 'none';
+        if (logoutBtn) {
+            logoutBtn.style.display = 'inline-block';
+            logoutBtn.textContent = `Logout (${currentUser.name})`;
+        }
+    } else {
+        if (loginBtn) loginBtn.style.display = 'inline-block';
+        if (registerBtn) registerBtn.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+    }
+}
+
+// ============================================
+// TAB SWITCHING
+// ============================================
 function switchLoginTab(type) {
     currentLoginType = type;
     document.querySelectorAll('#loginPage .tab-btn').forEach(btn => {
@@ -1118,7 +2030,6 @@ function switchRegisterTab(type) {
     }
 }
 
-// Dashboard Tab Switching
 function switchDashboardTab(tab) {
     document.querySelectorAll('#customerDashboard .tab-btn').forEach(btn => {
         btn.classList.remove('active');
@@ -1133,8 +2044,10 @@ function switchDashboardTab(tab) {
         document.getElementById('customerProfile').classList.add('active');
     } else if (tab === 'bookings') {
         document.getElementById('customerBookings').classList.add('active');
+        loadCustomerBookings();
     } else if (tab === 'browse') {
         document.getElementById('customerBrowse').classList.add('active');
+        loadMaidsForCustomer();
     }
 }
 
@@ -1152,220 +2065,52 @@ function switchMaidTab(tab) {
         document.getElementById('maidProfile').classList.add('active');
     } else if (tab === 'bookings') {
         document.getElementById('maidBookings').classList.add('active');
+        loadMaidBookings();
     }
 }
 
-// Authentication Functions
-function handleLogin(event) {
-    event.preventDefault();
-    
-    const email = document.getElementById('loginEmail').value;
-    const password = document.getElementById('loginPassword').value;
-    
-    let users = [];
-    let userType = '';
-    
-    if (currentLoginType === 'customer') {
-        users = JSON.parse(localStorage.getItem('customers') || '[]');
-        userType = 'customer';
-    } else {
-        users = JSON.parse(localStorage.getItem('maids') || '[]');
-        userType = 'maid';
-    }
-    
-    const user = users.find(u => u.email === email && u.password === password);
-    
-    if (user) {
-        currentUser = user;
-        currentUserType = userType;
-        localStorage.setItem('currentUser', JSON.stringify({user, userType}));
+// ============================================
+// MAID DATA FUNCTIONS
+// ============================================
+async function loadMaidsData() {
+    try {
+        const { data: maids, error } = await supabase
+            .from('maids')
+            .select('*')
+            .order('created_at', { ascending: false });
         
-        updateNavigation();
+        if (error) throw error;
         
-        if (userType === 'customer') {
-            showCustomerDashboard();
-        } else {
-            showMaidDashboard();
-        }
-        
-        showNotification('Login successful!', 'success');
-    } else {
-        showNotification('Invalid credentials!', 'error');
+        displayMaids(maids || [], 'maidsGrid');
+    } catch (error) {
+        console.error('Error loading maids:', error);
+        showNotification('Failed to load maids data', 'error');
     }
 }
 
-function handleRegister(event) {
-    event.preventDefault();
-    
-    const name = document.getElementById('registerName').value;
-    const email = document.getElementById('registerEmail').value;
-    const phone = document.getElementById('registerPhone').value;
-    const password = document.getElementById('registerPassword').value;
-    
-    let users = [];
-    let storageKey = '';
-    
-    if (currentRegisterType === 'customer') {
-        users = JSON.parse(localStorage.getItem('customers') || '[]');
-        storageKey = 'customers';
-    } else {
-        users = JSON.parse(localStorage.getItem('maids') || '[]');
-        storageKey = 'maids';
-    }
-    
-    // Check if user already exists
-    if (users.find(u => u.email === email)) {
-        showNotification('User already exists with this email!', 'error');
-        return;
-    }
-    
-    const newUser = {
-        id: generateId(currentRegisterType),
-        name,
-        email,
-        phone,
-        password
-    };
-    
-    // Add maid-specific fields
-    if (currentRegisterType === 'maid') {
-        newUser.address = document.getElementById('registerAddress').value;
-        newUser.experience = parseInt(document.getElementById('registerExperience').value) || 0;
-        newUser.dailyRate = parseInt(document.getElementById('registerDailyRate').value) || 0;
-        newUser.monthlyRate = parseInt(document.getElementById('registerMonthlyRate').value) || 0;
-        newUser.bio = document.getElementById('registerBio').value;
-        newUser.whatsapp = phone;
+async function loadMaidsForCustomer() {
+    try {
+        const { data: maids, error } = await supabase
+            .from('maids')
+            .select('*')
+            .order('created_at', { ascending: false });
         
-        // Handle photo upload
-        const photoFile = document.getElementById('registerPhoto').files[0];
-        if (photoFile) {
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                newUser.photo = e.target.result;
-                saveUser();
-            };
-            reader.readAsDataURL(photoFile);
-        } else {
-            newUser.photo = null;
-            saveUser();
-        }
-    } else {
-        saveUser();
+        if (error) throw error;
+        
+        displayMaids(maids || [], 'customerMaidsGrid');
+    } catch (error) {
+        console.error('Error loading maids:', error);
     }
-    
-    function saveUser() {
-        users.push(newUser);
-        localStorage.setItem(storageKey, JSON.stringify(users));
-        
-        showNotification('Registration successful!', 'success');
-        
-        // Auto login
-        currentUser = newUser;
-        currentUserType = currentRegisterType;
-        localStorage.setItem('currentUser', JSON.stringify({user: newUser, userType: currentRegisterType}));
-        
-        updateNavigation();
-        
-        if (currentRegisterType === 'customer') {
-            showCustomerDashboard();
-        } else {
-            showMaidDashboard();
-        }
-        
-        // Reset form
-        event.target.reset();
-        if (currentRegisterType === 'maid') {
-            document.getElementById('maidFields').style.display = 'none';
-            switchRegisterTab('customer');
-        }
-    }
-}
-
-function logout() {
-    currentUser = null;
-    currentUserType = null;
-    localStorage.removeItem('currentUser');
-    updateNavigation();
-    showHome();
-    showNotification('Logged out successfully!', 'success');
-}
-
-function checkUserLogin() {
-    const savedUser = localStorage.getItem('currentUser');
-    if (savedUser) {
-        const userData = JSON.parse(savedUser);
-        currentUser = userData.user;
-        currentUserType = userData.userType;
-        updateNavigation();
-    }
-}
-
-function updateNavigation() {
-    const loginBtn = document.querySelector('[onclick="showLogin()"]');
-    const registerBtn = document.querySelector('[onclick="showRegister()"]');
-    const logoutBtn = document.getElementById('logoutBtn');
-    
-    if (currentUser) {
-        loginBtn.style.display = 'none';
-        registerBtn.style.display = 'none';
-        logoutBtn.style.display = 'inline-block';
-        logoutBtn.textContent = `Logout (${currentUser.name})`;
-    } else {
-        loginBtn.style.display = 'inline-block';
-        registerBtn.style.display = 'inline-block';
-        logoutBtn.style.display = 'none';
-    }
-}
-
-// Utility Functions
-function generateId(type) {
-    return type + '_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-}
-
-function generateAvatar(name) {
-    const firstLetter = name.charAt(0).toUpperCase();
-    return `<div class="maid-avatar">${firstLetter}</div>`;
-}
-
-function showNotification(message, type = 'info') {
-    // Create notification element
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-        position: fixed;
-        top: 120px;
-        right: 20px;
-        padding: 1rem 1.5rem;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        z-index: 2000;
-        animation: slideInRight 0.3s ease;
-    `;
-    
-    document.body.appendChild(notification);
-    
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
-}
-
-// Maid Data Functions
-function loadMaidsData() {
-    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
-    displayMaids(maids, 'maidsGrid');
-}
-
-function loadMaidsForCustomer() {
-    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
-    displayMaids(maids, 'customerMaidsGrid');
 }
 
 function displayMaids(maids, containerId) {
     const container = document.getElementById(containerId);
     if (!container) return;
+    
+    if (maids.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No maids available at the moment.</p>';
+        return;
+    }
     
     container.innerHTML = '';
     
@@ -1392,47 +2137,49 @@ function createMaidCard(maid) {
             <div class="maid-pricing">
                 <div class="price-item">
                     <div class="price-label">Daily</div>
-                    <div class="price-value">₹${maid.dailyRate}</div>
+                    <div class="price-value">₹${maid.daily_rate || maid.dailyRate || 0}</div>
                 </div>
                 <div class="price-item">
                     <div class="price-label">Monthly</div>
-                    <div class="price-value">₹${maid.monthlyRate}</div>
+                    <div class="price-value">₹${maid.monthly_rate || maid.monthlyRate || 0}</div>
                 </div>
             </div>
             <div class="contact-buttons">
-                <a href="tel:${maid.phone}" class="contact-btn" title="Call">📞</a>
-                <a href="https://wa.me/91${maid.whatsapp}" class="contact-btn" title="WhatsApp">💬</a>
-                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address)}" class="contact-btn" title="Location">📍</a>
+                <a href="tel:${maid.phone}" class="contact-btn" onclick="event.stopPropagation()" title="Call">📞</a>
+                <a href="https://wa.me/91${maid.whatsapp || maid.phone}" class="contact-btn" onclick="event.stopPropagation()" title="WhatsApp">💬</a>
+                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address || '')}" class="contact-btn" onclick="event.stopPropagation()" title="Location">📍</a>
             </div>
         </div>
     `;
     
     return card;
 }
-// Add after initializeApp() call in DOMContentLoaded
-window.addEventListener('popstate', function(event) {
-    if (event.state && event.state.page) {
-        showPage(event.state.page, false);
-        navigationHistory = event.state.history || ['homePage'];
-    } else {
-        goBack();
-    }
-});
 
-function searchMaids() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
+async function searchMaids() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase().trim();
     
-    const filteredMaids = maids.filter(maid => 
-        maid.name.toLowerCase().includes(searchTerm) ||
-        maid.address.toLowerCase().includes(searchTerm) ||
-        maid.bio.toLowerCase().includes(searchTerm)
-    );
+    if (!searchTerm) {
+        loadMaidsData();
+        return;
+    }
     
-    displayMaids(filteredMaids, 'maidsGrid');
+    try {
+        const { data: maids, error } = await supabase
+            .from('maids')
+            .select('*')
+            .or(`name.ilike.%${searchTerm}%,address.ilike.%${searchTerm}%,bio.ilike.%${searchTerm}%`);
+        
+        if (error) throw error;
+        
+        displayMaids(maids || [], 'maidsGrid');
+    } catch (error) {
+        console.error('Search error:', error);
+    }
 }
 
-// Modal Functions
+// ============================================
+// MODAL FUNCTIONS
+// ============================================
 function openMaidModal(maid) {
     const modal = document.getElementById('maidModal');
     const modalContent = document.getElementById('maidModalContent');
@@ -1440,6 +2187,9 @@ function openMaidModal(maid) {
     const avatarContent = maid.photo ? 
         `<img src="${maid.photo}" alt="${maid.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
         maid.name.charAt(0).toUpperCase();
+    
+    const dailyRate = maid.daily_rate || maid.dailyRate || 0;
+    const monthlyRate = maid.monthly_rate || maid.monthlyRate || 0;
     
     modalContent.innerHTML = `
         <div style="text-align: center; margin-bottom: 2rem;">
@@ -1450,23 +2200,23 @@ function openMaidModal(maid) {
         
         <div style="margin-bottom: 2rem;">
             <h4>About</h4>
-            <p>${maid.bio}</p>
+            <p>${maid.bio || 'No description available'}</p>
         </div>
         
         <div style="margin-bottom: 2rem;">
             <h4>Location</h4>
-            <p>${maid.address}</p>
+            <p>${maid.address || 'Location not specified'}</p>
         </div>
         
         <div style="margin-bottom: 2rem;">
             <h4>Pricing</h4>
             <div style="display: flex; justify-content: space-around; background: var(--accent-color); padding: 1rem; border-radius: 8px;">
                 <div style="text-align: center;">
-                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${maid.dailyRate}</div>
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${dailyRate}</div>
                     <div style="font-size: 0.9rem; color: var(--text-secondary);">Per Day</div>
                 </div>
                 <div style="text-align: center;">
-                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${maid.monthlyRate}</div>
+                    <div style="font-weight: 700; color: var(--primary-color); font-size: 1.2rem;">₹${monthlyRate}</div>
                     <div style="font-size: 0.9rem; color: var(--text-secondary);">Per Month</div>
                 </div>
             </div>
@@ -1474,16 +2224,20 @@ function openMaidModal(maid) {
         
         <div style="margin-bottom: 2rem;">
             <h4>Contact</h4>
-            <div style="display: flex; gap: 1rem; justify-content: center;">
+            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
                 <a href="tel:${maid.phone}" class="btn btn-outline">📞 Call</a>
-                <a href="https://wa.me/91${maid.whatsapp}" class="btn btn-outline">💬 WhatsApp</a>
-                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address)}" class="btn btn-outline">📍 Location</a>
+                <a href="https://wa.me/91${maid.whatsapp || maid.phone}" class="btn btn-outline">💬 WhatsApp</a>
+                <a href="https://maps.google.com/?q=${encodeURIComponent(maid.address || '')}" class="btn btn-outline">📍 Location</a>
             </div>
         </div>
         
         ${currentUser && currentUserType === 'customer' ? `
             <div style="text-align: center;">
                 <button class="btn btn-primary btn-large" onclick="bookMaid('${maid.id}')">Book Now</button>
+            </div>
+        ` : !currentUser ? `
+            <div style="text-align: center;">
+                <button class="btn btn-primary btn-large" onclick="closeMaidModal(); showLogin();">Login to Book</button>
             </div>
         ` : ''}
     `;
@@ -1495,151 +2249,6 @@ function closeMaidModal() {
     document.getElementById('maidModal').style.display = 'none';
 }
 
-// Booking Functions
-function bookMaid(maidId) {
-    if (!currentUser || currentUserType !== 'customer') {
-        showNotification('Please login as customer to book!', 'error');
-        return;
-    }
-    
-    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const maids = JSON.parse(localStorage.getItem('maids') || '[]');
-    const maid = maids.find(m => m.id === maidId);
-    
-    const booking = {
-        id: generateId('booking'),
-        customerId: currentUser.id,
-        maidId: maidId,
-        maidName: maid.name,
-        customerName: currentUser.name,
-        date: new Date().toISOString().split('T')[0],
-        status: 'pending',
-        createdAt: new Date().toISOString()
-    };
-    
-    bookings.push(booking);
-    localStorage.setItem('bookings', JSON.stringify(bookings));
-    
-    closeMaidModal();
-    showNotification('Booking request sent successfully!', 'success');
-    
-    if (document.getElementById('customerDashboard').classList.contains('active')) {
-        loadCustomerBookings();
-    }
-}
-
-// Dashboard Functions
-function loadCustomerProfile() {
-    const profileContainer = document.getElementById('customerProfileData');
-    if (!currentUser || !profileContainer) return;
-    
-    profileContainer.innerHTML = `
-        <div style="display: grid; gap: 1rem;">
-            <div><strong>Name:</strong> ${currentUser.name}</div>
-            <div><strong>Email:</strong> ${currentUser.email}</div>
-            <div><strong>Phone:</strong> ${currentUser.phone}</div>
-            <div><strong>Member Since:</strong> ${new Date().toLocaleDateString()}</div>
-        </div>
-    `;
-}
-
-function loadMaidProfile() {
-    const profileContainer = document.getElementById('maidProfileData');
-    if (!currentUser || !profileContainer) return;
-    
-    const avatarContent = currentUser.photo ? 
-        `<img src="${currentUser.photo}" alt="${currentUser.name}" style="width: 100%; height: 100%; object-fit: cover;">` : 
-        currentUser.name.charAt(0).toUpperCase();
-    
-    profileContainer.innerHTML = `
-        <div style="text-align: center; margin-bottom: 2rem;">
-            <div class="maid-avatar" style="margin: 0 auto 1rem;">${avatarContent}</div>
-            <h3>${currentUser.name}</h3>
-        </div>
-        <div style="display: grid; gap: 1rem;">
-            <div><strong>Email:</strong> ${currentUser.email}</div>
-            <div><strong>Phone:</strong> ${currentUser.phone}</div>
-            <div><strong>Address:</strong> ${currentUser.address}</div>
-            <div><strong>Experience:</strong> ${currentUser.experience} years</div>
-            <div><strong>Daily Rate:</strong> ₹${currentUser.dailyRate}</div>
-            <div><strong>Monthly Rate:</strong> ₹${currentUser.monthlyRate}</div>
-            <div><strong>Bio:</strong> ${currentUser.bio}</div>
-        </div>
-    `;
-}
-
-function loadCustomerBookings() {
-    const bookingsContainer = document.getElementById('bookingsList');
-    if (!currentUser || !bookingsContainer) return;
-    
-    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const customerBookings = bookings.filter(b => b.customerId === currentUser.id);
-    
-    if (customerBookings.length === 0) {
-        bookingsContainer.innerHTML = '<p>No bookings found.</p>';
-        return;
-    }
-    
-    bookingsContainer.innerHTML = customerBookings.map(booking => `
-        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4>${booking.maidName}</h4>
-                <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
-                    ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
-                      booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
-                      'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
-            </div>
-            <div><strong>Booking Date:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
-            <div><strong>Service Date:</strong> ${booking.date}</div>
-        </div>
-    `).join('');
-}
-
-function loadMaidBookings() {
-    const bookingsContainer = document.getElementById('maidBookingsList');
-    if (!currentUser || !bookingsContainer) return;
-    
-    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const maidBookings = bookings.filter(b => b.maidId === currentUser.id);
-    
-    if (maidBookings.length === 0) {
-        bookingsContainer.innerHTML = '<p>No booking requests found.</p>';
-        return;
-    }
-    
-    bookingsContainer.innerHTML = maidBookings.map(booking => `
-        <div style="background: white; padding: 1.5rem; border-radius: 8px; box-shadow: var(--shadow-md); margin-bottom: 1rem; border: 1px solid var(--border-color);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                <h4>${booking.customerName}</h4>
-                <span style="padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
-                    ${booking.status === 'pending' ? 'background: #fef3c7; color: #d97706;' : 
-                      booking.status === 'confirmed' ? 'background: #dcfce7; color: #16a34a;' : 
-                      'background: #fee2e2; color: #dc2626;'}">${booking.status.toUpperCase()}</span>
-            </div>
-            <div><strong>Booking Date:</strong> ${new Date(booking.createdAt).toLocaleDateString()}</div>
-            <div><strong>Service Date:</strong> ${booking.date}</div>
-            ${booking.status === 'pending' ? `
-                <div style="margin-top: 1rem; display: flex; gap: 0.5rem;">
-                    <button class="btn btn-primary" onclick="updateBookingStatus('${booking.id}', 'confirmed')">Accept</button>
-                    <button class="btn btn-outline" onclick="updateBookingStatus('${booking.id}', 'rejected')">Reject</button>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-}
-
-function updateBookingStatus(bookingId, status) {
-    const bookings = JSON.parse(localStorage.getItem('bookings') || '[]');
-    const booking = bookings.find(b => b.id === bookingId);
-    
-    if (booking) {
-        booking.status = status;
-        localStorage.setItem('bookings', JSON.stringify(bookings));
-        showNotification(`Booking ${status} successfully!`, 'success');
-        loadMaidBookings();
-    }
-}
-
 // Close modal when clicking outside
 window.onclick = function(event) {
     const modal = document.getElementById('maidModal');
@@ -1648,6 +2257,66 @@ window.onclick = function(event) {
     }
 }
 
-    </script>
+// ============================================
+// BOOKING FUNCTIONS
+// ============================================
+async function bookMaid(maidId) {
+    if (!currentUser || currentUserType !== 'customer') {
+        showNotification('Please login as customer to book!', 'error');
+        showLogin();
+        return;
+    }
+    
+    showLoading(true);
+    
+    try {
+        // Get maid details
+        const { data: maid, error: maidError } = await supabase
+            .from('maids')
+            .select('*')
+            .eq('id', maidId)
+            .single();
+        
+        if (maidError || !maid) {
+            showNotification('Maid not found!', 'error');
+            showLoading(false);
+            return;
+        }
+        
+        const booking = {
+            customer_id: currentUser.id,
+            maid_id: maidId,
+            maid_name: maid.name,
+            customer_name: currentUser.name,
+            service_date: new Date().toISOString().split('T')[0],
+            status: 'pending'
+        };
+        
+        const { data, error } = await supabase
+            .from('bookings')
+            .insert([booking])
+            .select()
+            .single();
+        
+        if (error) throw error;
+        
+        closeMaidModal();
+        showNotification('Booking request sent successfully!', 'success');
+        
+        // Refresh bookings if on dashboard
+        if (document.getElementById('customerDashboard').classList.contains('active')) {
+            loadCustomerBookings();
+        }
+        
+    } catch (error) {
+        console.error('Booking error:', error);
+        showNotification('Booking failed. Please try again.', 'error');
+    } finally {
+        showLoading(false);
+    }
+}
+
+// ============================================
+//    </script>
 </body>
 </html>
